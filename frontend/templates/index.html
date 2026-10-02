@@ -1,0 +1,459 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-EMLAK - Gayrimenkul Değerleme ve İlan Platformu</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; }
+        .card-custom { border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .nav-pills .nav-link { color: #64748b; font-weight: 600; padding: 10px 22px; border-radius: 10px; margin-right: 8px; }
+        .nav-pills .nav-link.active { background-color: #2563eb; color: #fff; }
+        .badge-cheap { background-color: #10b981; }
+        .badge-expensive { background-color: #ef4444; }
+        .badge-normal { background-color: #3b82f6; }
+        .property-card { border-radius: 12px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid #e2e8f0; background: #fff; }
+        .property-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+        .property-img { height: 210px; width: 100%; object-fit: cover; }
+        .badge-portal-hepsiemlak { background-color: #e61c24; color: #fff; }
+        .badge-portal-emlakjet { background-color: #ff5a00; color: #fff; }
+    </style>
+</head>
+<body class="p-3 p-md-4">
+<div class="container" style="max-width: 1320px;">
+    <!-- Üst Başlık & Sekmeler -->
+    <header class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <div class="d-flex align-items-center mb-2 mb-md-0">
+            <span class="fs-2 me-2">🏠</span>
+            <div>
+                <h3 class="fw-bold mb-0 text-dark">K-EMLAK</h3>
+                <small class="text-muted">İstanbul Emlakjet & Hepsiemlak Entegreli Değerleme Platformu</small>
+            </div>
+        </div>
+
+        <ul class="nav nav-pills" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="valuation-tab" data-bs-toggle="pill" data-bs-target="#valuation-pane" type="button" role="tab">🏡 Ev Değerleme</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="listings-tab" data-bs-toggle="pill" data-bs-target="#listings-pane" type="button" role="tab">📋 Güncel İlanlar & Vitrin</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="admin-tab" data-bs-toggle="pill" data-bs-target="#admin-pane" type="button" role="tab">📊 Yönetim & Grafikler</button>
+            </li>
+        </ul>
+    </header>
+
+    <div class="tab-content" id="myTabContent">
+        <!-- 1. SEKME: DEĞERLEME -->
+        <div class="tab-pane fade show active" id="valuation-pane" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card card-custom p-4 bg-white h-100">
+                        <h5 class="fw-bold mb-3">Ev Özellikleri Girişi</h5>
+                        <form action="/valuation" method="post">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">İşlem Türü</label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="listing_type" id="typeSale" value="Satılık" checked>
+                                            <label class="form-check-label fw-bold text-primary" for="typeSale">🏷️ Satılık</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="listing_type" id="typeRent" value="Kiralık">
+                                            <label class="form-check-label fw-bold text-success" for="typeRent">🔑 Kiralık</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Eşya Durumu</label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="is_furnished" id="furnNo" value="0" checked>
+                                            <label class="form-check-label fw-semibold" for="furnNo">Eşyasız</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="is_furnished" id="furnYes" value="1">
+                                            <label class="form-check-label fw-semibold text-warning-emphasis" for="furnYes">🛋️ Eşyalı</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">İlçe</label>
+                                    <select id="valDistrict" name="district" class="form-select" required onchange="updateValuationNeighborhoods()">
+                                        <option value="" disabled selected>İlçe Seçin</option>
+                                        {% for d in all_districts %}
+                                        <option value="{{ d }}">{{ d }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Mahalle / Semt</label>
+                                    <select id="valNeighborhood" name="neighborhood" class="form-select" required>
+                                        <option value="" disabled selected>Önce İlçe Seçin</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Oda Sayısı / Tipi</label>
+                                    <select name="room_count" class="form-select" required>
+                                        {% for r in room_list %}
+                                        <option value="{{ r }}" {% if r == '3+1' %}selected{% endif %}>{{ r }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Bulunduğu Kat / Tipi</label>
+                                    <select name="floor_type" class="form-select" required>
+                                        {% for f in floor_list %}
+                                        <option value="{{ f }}" {% if f == '2. Kat' %}selected{% endif %}>{{ f }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Brüt m²</label>
+                                    <input type="number" name="gross_sqm" class="form-control" placeholder="130" required min="20" max="2000">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Bina Yaşı</label>
+                                    <input type="number" name="building_age" class="form-control" placeholder="5" required min="0" max="100">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">İlan Fiyatı (TL)</label>
+                                    <input type="number" name="user_price" class="form-control" placeholder="Kıyaslama için">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold mt-2">Piyasa Değerini Hesapla</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    {% if result %}
+                    <div class="card card-custom p-4 bg-white mb-4 border-start border-4 border-primary">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="text-uppercase text-muted fw-bold small mb-0">Hesaplanan Piyasa Değeri</h6>
+                            <div>
+                                <span class="badge {{ 'bg-primary' if result.listing_type == 'Satılık' else 'bg-success' }} me-1">{{ result.listing_type }}</span>
+                                <span class="badge bg-secondary">{{ '🛋️ Eşyalı' if result.is_furnished else 'Boş / Eşyasız' }}</span>
+                            </div>
+                        </div>
+                        <h2 class="text-primary fw-bold mb-2">{{ "{:,.0f}".format(result.estimated_price) }} TL {% if result.listing_type == 'Kiralık' %}<small class="fs-6 text-muted">/ ay</small>{% endif %}</h2>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span>Fiyat Analizi:</span>
+                            {% if result.status_tag == 'Uygun Fiyatlı' %}
+                                <span class="badge badge-cheap px-3 py-1">{{ result.status_tag }}</span>
+                            {% elif result.status_tag == 'Pahalı' %}
+                                <span class="badge badge-expensive px-3 py-1">{{ result.status_tag }}</span>
+                            {% else %}
+                                <span class="badge badge-normal px-3 py-1">{{ result.status_tag }}</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-secondary">Tahmin İsabet Güveni: <strong>%{{ result.confidence_score }}</strong></small>
+                    </div>
+                    {% endif %}
+
+                    <div class="card card-custom p-4 bg-white">
+                        <h5 class="fw-bold mb-3">Son Yapılan Değerlemeler</h5>
+                        {% if history %}
+                        <div class="list-group list-group-flush">
+                            {% for item in history %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <div>
+                                    <span class="badge bg-light text-dark border">{{ item.listing_type }}</span>
+                                    <strong>{{ item.district }}</strong> · {{ item.gross_sqm }} m²
+                                    <br><small class="text-muted">{{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fw-bold text-dark">{{ "{:,.0f}".format(item.predicted_price) }} TL</span>
+                                    <br><span class="badge bg-light text-dark border">{{ item.status_tag }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted mb-0">Henüz değerleme kaydı yok.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. SEKME: GÜNCEL İLAN VİTRİNİ -->
+        <div class="tab-pane fade" id="listings-pane" role="tabpanel">
+            <div class="card card-custom p-3 mb-4 bg-white">
+                <form method="get" action="/" class="row g-2">
+                    <input type="hidden" name="tab" value="listings">
+                    
+                    <!-- Portal Seçeneği -->
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">Portal</label>
+                        <select name="portal" class="form-select form-select-sm">
+                            <option value="">Tümü (Hepsi & Emlakjet)</option>
+                            <option value="Hepsiemlak" {% if selected_portal == 'Hepsiemlak' %}selected{% endif %}>🔴 Hepsiemlak</option>
+                            <option value="Emlakjet" {% if selected_portal == 'Emlakjet' %}selected{% endif %}>🟠 Emlakjet</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-1">
+                        <label class="form-label fw-semibold small">Tür</label>
+                        <select name="listing_type" class="form-select form-select-sm">
+                            <option value="">Tümü</option>
+                            <option value="Satılık" {% if selected_type == 'Satılık' %}selected{% endif %}>Satılık</option>
+                            <option value="Kiralık" {% if selected_type == 'Kiralık' %}selected{% endif %}>Kiralık</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">İlçe</label>
+                        <select id="filterDistrict" name="district" class="form-select form-select-sm" onchange="updateFilterNeighborhoods()">
+                            <option value="">Tüm İstanbul</option>
+                            {% for d in all_districts %}
+                            <option value="{{ d }}" {% if selected_district == d %}selected{% endif %}>{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">Mahalle</label>
+                        <select id="filterNeighborhood" name="neighborhood" class="form-select form-select-sm">
+                            <option value="">Tümü</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">Oda / Dubleks</label>
+                        <select name="room_count" class="form-select form-select-sm">
+                            <option value="">Tümü</option>
+                            {% for r in room_list %}
+                            <option value="{{ r }}" {% if selected_room == r %}selected{% endif %}>{{ r }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">Kat Tipi</label>
+                        <select name="floor_type" class="form-select form-select-sm">
+                            <option value="">Tümü</option>
+                            {% for f in floor_list %}
+                            <option value="{{ f }}" {% if selected_floor == f %}selected{% endif %}>{{ f }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">Filtrele</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Kartlar -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">İstanbul İlanları <span class="badge bg-light text-dark border">{{ listings|length }} İlan</span></h5>
+            </div>
+
+            <div class="row g-4">
+                {% for item in listings %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="property-card h-100 d-flex flex-column">
+                        <div class="position-relative">
+                            <a href="/property/{{ item.id }}" title="İlan Detayına Git">
+                                <img src="{{ item.image_url }}" class="property-img" alt="Ev Görseli" loading="lazy">
+                            </a>
+                            <div class="position-absolute top-0 start-0 m-2 d-flex gap-1">
+                                <span class="badge {{ 'bg-primary' if item.listing_type == 'Satılık' else 'bg-success' }}">
+                                    {{ item.listing_type }}
+                                </span>
+                                <span class="badge {{ 'badge-portal-hepsiemlak' if item.portal == 'Hepsiemlak' else 'badge-portal-emlakjet' }}">
+                                    {{ item.portal }}
+                                </span>
+                                {% if item.is_furnished %}
+                                <span class="badge bg-warning text-dark">🛋️ Eşyalı</span>
+                                {% endif %}
+                            </div>
+                            <div class="position-absolute bottom-0 end-0 m-2">
+                                {% if item.analysis_tag == 'Uygun Fiyatlı' %}
+                                    <span class="badge bg-success shadow-sm">Uygun Fiyatlı</span>
+                                {% elif item.analysis_tag == 'Pahalı' %}
+                                    <span class="badge bg-danger shadow-sm">Pahalı</span>
+                                {% else %}
+                                    <span class="badge bg-primary shadow-sm">Piyasa Değeri</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="p-3 d-flex flex-column flex-grow-1">
+                            <h4 class="fw-bold text-primary mb-1">
+                                {{ "{:,.0f}".format(item.price) }} TL 
+                                {% if item.listing_type == 'Kiralık' %}<small class="fs-6 text-muted">/ay</small>{% endif %}
+                            </h4>
+
+                            <a href="/property/{{ item.id }}" class="text-decoration-none text-dark">
+                                <h6 class="fw-bold mb-1 text-truncate" title="{{ item.title }}">{{ item.title }}</h6>
+                            </a>
+                            <p class="text-secondary small mb-2">
+                                <strong>{{ item.district }}</strong>, {{ item.neighborhood }}<br>
+                                <span class="text-muted">📍 {{ item.full_address }}</span>
+                            </p>
+
+                            <p class="text-muted small mb-3">
+                                <span class="badge bg-light text-dark border">{{ item.room_count }}</span> · 
+                                <span class="badge bg-light text-dark border">{{ item.floor }}</span> · 
+                                <span>{{ item.gross_sqm }} m²</span> · 
+                                <span>{{ item.building_age }} Yaş</span>
+                            </p>
+
+                            <!-- Butonlar -->
+                            <div class="mt-auto pt-2 border-top d-flex gap-2">
+                                <a href="/property/{{ item.id }}" class="btn btn-primary btn-sm w-50 fw-semibold d-flex align-items-center justify-content-center gap-1">
+                                    🔍 <span>K-Emlak Detay</span>
+                                </a>
+                                <a href="{{ item.source_url }}" target="_blank" class="btn btn-outline-danger btn-sm w-50 fw-semibold d-flex align-items-center justify-content-center gap-1">
+                                    🌐 <span>{{ item.portal }}</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 3. SEKME: YÖNETİM & GRAFİKLER -->
+        <div class="tab-pane fade" id="admin-pane" role="tabpanel">
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card card-custom p-4 bg-white">
+                        <span class="text-muted fw-semibold">Toplam İlan</span>
+                        <h2 class="fw-bold text-dark mt-1">{{ total_properties }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card card-custom p-4 bg-white">
+                        <span class="text-muted fw-semibold">Satılık İlanlar</span>
+                        <h2 class="fw-bold text-primary mt-1">{{ total_sale }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card card-custom p-4 bg-white">
+                        <span class="text-muted fw-semibold">Kiralık İlanlar</span>
+                        <h2 class="fw-bold text-success mt-1">{{ total_rent }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card card-custom p-4 bg-white">
+                        <span class="text-muted fw-semibold">Değerleme Sayısı</span>
+                        <h2 class="fw-bold text-info mt-1">{{ total_valuations }}</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-custom p-4 bg-white">
+                <h5 class="fw-bold mb-3">İstanbul İlçelerinde Ortalama Satılık m² Fiyat Sıralaması (TL)</h5>
+                <canvas id="districtChart" height="130"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const locations = {{ istanbul_locations | tojson }};
+    const selectedDist = "{{ selected_district or '' }}";
+    const selectedNeigh = "{{ selected_neighborhood or '' }}";
+
+    function updateValuationNeighborhoods() {
+        const dist = document.getElementById('valDistrict').value;
+        const neighSelect = document.getElementById('valNeighborhood');
+        neighSelect.innerHTML = '<option value="" disabled selected>Mahalle Seçin</option>';
+
+        if (locations[dist]) {
+            locations[dist].forEach(n => {
+                const opt = document.createElement('option');
+                opt.value = n;
+                opt.textContent = n;
+                neighSelect.appendChild(opt);
+            });
+        }
+    }
+
+    function updateFilterNeighborhoods(initVal = null) {
+        const dist = document.getElementById('filterDistrict').value;
+        const neighSelect = document.getElementById('filterNeighborhood');
+        neighSelect.innerHTML = '<option value="">Tümü</option>';
+
+        if (locations[dist]) {
+            locations[dist].forEach(n => {
+                const opt = document.createElement('option');
+                opt.value = n;
+                opt.textContent = n;
+                if (initVal && initVal === n) opt.selected = true;
+                neighSelect.appendChild(opt);
+            });
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const valDist = document.getElementById('valDistrict');
+        if (valDist.options.length > 1) {
+            valDist.selectedIndex = 1;
+            updateValuationNeighborhoods();
+        }
+
+        if (selectedDist) {
+            updateFilterNeighborhoods(selectedNeigh);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('tab') === 'listings') {
+            const triggerEl = document.querySelector('#listings-tab');
+            bootstrap.Tab.getInstance(triggerEl) || new bootstrap.Tab(triggerEl).show();
+        }
+    });
+
+    const labels = {{ chart_labels | tojson }};
+    const dataValues = {{ chart_values | tojson }};
+
+    const ctx = document.getElementById('districtChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Ortalama Satılık m² Fiyatı (TL)',
+                data: dataValues,
+                backgroundColor: 'rgba(37, 99, 235, 0.75)',
+                borderColor: 'rgba(37, 99, 235, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 60,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) { return value.toLocaleString('tr-TR') + ' TL'; }
+                    }
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>K-EMLAK - İlan Listesi & Analiz</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f4f6f9; }
+        .card { border-radius: 10px; border: none; }
+    </style>
+</head>
+<body class="p-4">
+<div class="container">
+    <!-- Navbar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <h3 class="fw-bold mb-0">🏠 K-EMLAK</h3>
+        <div>
+            <a href="/valuation" class="btn btn-outline-primary btn-sm me-2">Değerleme Modülü</a>
+            <a href="/listings" class="btn btn-primary btn-sm me-2">İlanlar</a>
+            <a href="/admin" class="btn btn-outline-dark btn-sm">Yönetim & Grafikler</a>
+        </div>
+    </div>
+
+    <!-- Filtre Kartı -->
+    <div class="card p-3 mb-4 shadow-sm">
+        <form method="get" action="/listings" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">İlçe</label>
+                <select name="district" class="form-select">
+                    <option value="">Tümü</option>
+                    <option value="Kadıköy" {% if selected_district == 'Kadıköy' %}selected{% endif %}>Kadıköy</option>
+                    <option value="Beşiktaş" {% if selected_district == 'Beşiktaş' %}selected{% endif %}>Beşiktaş</option>
+                    <option value="Şişli" {% if selected_district == 'Şişli' %}selected{% endif %}>Şişli</option>
+                    <option value="Üsküdar" {% if selected_district == 'Üsküdar' %}selected{% endif %}>Üsküdar</option>
+                    <option value="Bakırköy" {% if selected_district == 'Bakırköy' %}selected{% endif %}>Bakırköy</option>
+                    <option value="Maltepe" {% if selected_district == 'Maltepe' %}selected{% endif %}>Maltepe</option>
+                    <option value="Ataşehir" {% if selected_district == 'Ataşehir' %}selected{% endif %}>Ataşehir</option>
+                    <option value="Beylikdüzü" {% if selected_district == 'Beylikdüzü' %}selected{% endif %}>Beylikdüzü</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Oda Sayısı</label>
+                <select name="room_count" class="form-select">
+                    <option value="">Tümü</option>
+                    <option value="1+1" {% if selected_room == '1+1' %}selected{% endif %}>1+1</option>
+                    <option value="2+1" {% if selected_room == '2+1' %}selected{% endif %}>2+1</option>
+                    <option value="3+1" {% if selected_room == '3+1' %}selected{% endif %}>3+1</option>
+                    <option value="4+1" {% if selected_room == '4+1' %}selected{% endif %}>4+1</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Maksimum Fiyat (TL)</label>
+                <input type="number" name="max_price" value="{{ max_price or '' }}" class="form-control" placeholder="Örn: 10000000">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Filtrele</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- İlanlar Tablosu -->
+    <div class="card p-3 shadow-sm">
+        <h5 class="fw-bold mb-3">İstanbul İlanları (Toplam: {{ listings|length }})</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Konum</th>
+                        <th>Oda</th>
+                        <th>m²</th>
+                        <th>Yaş</th>
+                        <th>İlan Fiyatı</th>
+                        <th>Piyasa Analizi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in listings %}
+                    <tr>
+                        <td><strong>{{ item.district }}</strong>, {{ item.neighborhood }}</td>
+                        <td>{{ item.room_count }}</td>
+                        <td>{{ item.gross_sqm }} m²</td>
+                        <td>{{ item.building_age }} yıl</td>
+                        <td class="fw-bold">{{ "{:,.0f}".format(item.price) }} TL</td>
+                        <td>
+                            {% if item.analysis_tag == 'Uygun Fiyatlı' %}
+                                <span class="badge bg-success">Uygun Fiyatlı</span>
+                            {% elif item.analysis_tag == 'Pahalı' %}
+                                <span class="badge bg-danger">Pahalı</span>
+                            {% else %}
+                                <span class="badge bg-primary">Normal</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
